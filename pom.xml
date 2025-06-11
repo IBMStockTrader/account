@@ -14,10 +14,7 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
--->
-
-<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+--><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.ibm.hybrid.cloud.sample.stocktrader</groupId>
   <artifactId>account</artifactId>
@@ -34,7 +31,7 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
     <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-    <quarkus.platform.version>3.21.3</quarkus.platform.version>
+    <quarkus.platform.version>3.23.3</quarkus.platform.version>
     <quarkus.pooled.jms.version>2.8.0</quarkus.pooled.jms.version>
     <testcontainers.version>1.20.4</testcontainers.version>
     <jnosql.version>1.1.6</jnosql.version>
@@ -143,7 +140,6 @@
     <dependency>
       <groupId>io.quarkiverse.messaginghub</groupId>
       <artifactId>quarkus-pooled-jms</artifactId>
-      <version>${quarkus.pooled.jms.version}</version>
     </dependency>
     <dependency>
       <groupId>org.eclipse.jnosql.databases</groupId>
@@ -179,6 +175,11 @@
       <version>0.10.0</version>
     </dependency>
     <dependency>
+      <groupId>io.quarkiverse.backstage</groupId>
+      <artifactId>quarkus-backstage</artifactId>
+      <version>0.7.0</version>
+    </dependency>
+    <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-junit5</artifactId>
       <scope>test</scope>
@@ -198,13 +199,13 @@
       <artifactId>quarkus-test-security-oidc</artifactId>
       <scope>test</scope>
     </dependency>
+
     <dependency>
       <groupId>com.github.javafaker</groupId>
       <artifactId>javafaker</artifactId>
       <version>1.0.2</version>
       <scope>test</scope>
     </dependency>
-
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-jdk14</artifactId>
