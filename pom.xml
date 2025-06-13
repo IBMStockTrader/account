@@ -174,11 +174,12 @@
       <artifactId>cloudant</artifactId>
       <version>0.10.0</version>
     </dependency>
-    <dependency>
-      <groupId>io.quarkiverse.backstage</groupId>
-      <artifactId>quarkus-backstage</artifactId>
-      <version>0.7.0</version>
-    </dependency>
+    <!-- used to regenerate skeleton for backstage -->
+<!--    <dependency>-->
+<!--      <groupId>io.quarkiverse.backstage</groupId>-->
+<!--      <artifactId>quarkus-backstage</artifactId>-->
+<!--      <version>0.7.0</version>-->
+<!--    </dependency>-->
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-junit5</artifactId>
