@@ -16,6 +16,7 @@
 package com.ibm.hybrid.cloud.sample.stocktrader.account.db;
 
 import com.ibm.hybrid.cloud.sample.stocktrader.account.json.Account;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import jakarta.data.page.PageRequest;
 import jakarta.data.repository.BasicRepository;
 import jakarta.data.repository.OrderBy;
@@ -34,8 +35,11 @@ public interface AccountRepository extends BasicRepository<Account, String> {
 
     // This requires an index on the owner field in CouchDB to already exist
     // See AccountDbStartupBean.java for how this index is created
+    // And even then, it is still a slow query.
+    @WithSpan
     List<Account> findByOwnerInOrderByOwnerAsc(List<String> owner, PageRequest pageable);
 
+    @WithSpan
     List<Account> findByOwnerIn(List<String> owner, PageRequest pageable);
 
     //TODO query all and order by owner ascending is not yet supported in jnosql-lite.
