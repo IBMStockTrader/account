@@ -52,19 +52,25 @@ paths:
   /account:
     get:
       parameters:
-      - name: owners
+      - description: List of owner names to retrieve account details for
+        required: false
+        name: owners
         in: query
         schema:
           type: array
           items:
             type: string
-      - name: page
+      - description: Which page to retrieve
+        required: false
+        name: page
         in: query
         schema:
           type: integer
           format: int32
           default: 1
-      - name: pageSize
+      - description: How many accounts per page
+        required: false
+        name: pageSize
         in: query
         schema:
           type: integer
@@ -83,7 +89,7 @@ paths:
           description: Not Authorized
         "403":
           description: Not Allowed
-      summary: Get All Accounts
+      summary: Get Accounts
       tags:
       - Account Service
       security:
