@@ -116,10 +116,13 @@ jobs:
         # Build a docker container and
         # push it to ECR so that it can
         # be deployed to ECS.
-        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
-          --build-arg GITHUB_SHA="$GITHUB_SHA" \
-          --build-arg GITHUB_REF="$GITHUB_REF" .
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+        mvn clean install -Dquarkus.container-image.build=true \
+          -Dquarkus.container-image.tag=$IMAGE_TAG \
+          -Dquarkus.container-image.group=$ECR_REPOSITORY \
+          -Dquarkus.jib.platforms=linux/amd64 \
+          -Dquarkus.container-image.registry=$ECR_REGISTRY \
+          -Dquarkus.container-image.push=true 
+
         echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
 
   update-gitops-repo:
