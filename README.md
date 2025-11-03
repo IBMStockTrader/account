@@ -82,9 +82,13 @@ To do the same but skipping test cases:
     -Dquarkus.container-image.registry=<YOUR REGISTRY HOST> 
 ```
 
+
 #### Run container
 
 In practice this means you'll run something like:
 ```bash
 docker run -i --rm -p 9080:9080 <your repository>/account 
 ```
+
+
+
