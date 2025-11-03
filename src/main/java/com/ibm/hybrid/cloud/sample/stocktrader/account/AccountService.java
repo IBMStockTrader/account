@@ -26,6 +26,7 @@ import com.ibm.hybrid.cloud.sample.stocktrader.account.json.WatsonInput;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Scope;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.smallrye.common.annotation.Blocking;
 import io.smallrye.common.annotation.NonBlocking;
 import jakarta.annotation.PostConstruct;
@@ -37,10 +38,10 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
+import lombok.With;
 import org.eclipse.microprofile.auth.LoginConfig;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.jwt.JsonWebToken;
-import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
@@ -49,6 +50,7 @@ import java.io.StringWriter;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * This microservice takes care of non-stock related attributes of a customer's account.  This includes
@@ -134,42 +136,40 @@ public class AccountService {
     @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({"StockTrader", "StockViewer"})
+    @WithSpan
+    //This is currently blocking due to long execution of findByOwnerInOrderByOwnerAsc
+    //With lots of accounts this will take over 3 seconds to execute, which throws a warning in the logs
+    //TODO switch to Reactive Patterns in Jakarta Data 1.1+ & JakartaEE 12
     public List<Account> getAccounts(@Parameter(description = "Which page to retrieve", required = false) @QueryParam("page") @DefaultValue("1") int pageNumber,
                                      @Parameter(description = "How many accounts per page", required = false) @QueryParam("pageSize") @DefaultValue("10") int pageSize,
                                      @Parameter(description = "List of owner names to retrieve account details for", required = false) @QueryParam("owners") List<String> owners) {
+        Objects.requireNonNull(accountDbRepository, "accountDbRepository is not initialized so returning empty array.  Investigate why the CDI injection failed for details");
         logger.fine("Entering getAllAccounts");
         logger.fine("Page Number, " + pageNumber + " Page size: " + pageSize + ", owners to find: " + owners);
         List<Account> pageOfAccounts = null; //= new ArrayList<>(15);
-        if (accountDbRepository != null) {
-            var pageable = PageRequest.ofPage(pageNumber).size(pageSize);
-            Span getAllAccountsSpan = tracer.spanBuilder("accountDbRepository.findAll().toList()").startSpan();
-
-            if (owners.isEmpty()) {
-                try (Scope scope = getAllAccountsSpan.makeCurrent()) {
-                    pageOfAccounts = accountDbRepository.findAll(pageable, Order.by(Sort.asc("owner"))).content();
-                } catch (Throwable t) {
-                    logException(t);
-                    getAllAccountsSpan.recordException(t);
-                    logger.severe("Error getting page of accounts");
-                } finally {
-                    getAllAccountsSpan.end();
-                }
+        var pageable = PageRequest.ofPage(pageNumber).size(pageSize);
+        Span getAllAccountsSpan = tracer.spanBuilder("accountDbRepository.findAll("+owners+").toList()").startSpan();
+            getAllAccountsSpan.setAttribute("findAll", true);
+        try (Scope scope = getAllAccountsSpan.makeCurrent()) {
+            if(owners.isEmpty()) {
+                getAllAccountsSpan.setAttribute("findAll", true);
+                pageOfAccounts = accountDbRepository.findAll(pageable, Order.by(Sort.asc("owner"))).content();
             } else {
-                try (Scope scope = getAllAccountsSpan.makeCurrent()) {
-                    pageOfAccounts = accountDbRepository.findByOwnerInOrderByOwnerAsc(owners, pageable);
-                    //Collections.sort(pageOfAccounts, Comparator.comparing(Account::getOwner));
-                    //pageOfAccounts = accountDbRepository.findAll(pageable).content();
-                } catch (Throwable t) {
-                    logException(t);
-                    getAllAccountsSpan.recordException(t);
-                    logger.severe("Error getting page of accounts");
-                } finally {
-                    getAllAccountsSpan.end();
-                }
+                getAllAccountsSpan.setAttribute("findAll", false);
+                // This method of using a parllelStream to individually query is 23x faster (0.17s) than the
+                // findByOwnerInOrderByOwnerAsc (3-4s) method.
+                pageOfAccounts = owners.parallelStream()
+                        .map(o-> accountDbRepository.findByOwner(o).get()).collect(Collectors.toList());
+                //pageOfAccounts = accountDbRepository.findByOwnerInOrderByOwnerAsc(owners, pageable);
             }
-        } else {
-            logger.warning("accountDbRepository is null, so returning empty array.  Investigate why the CDI injection failed for details");
+        } catch (Throwable t) {
+            logException(t);
+            getAllAccountsSpan.recordException(t);
+            logger.severe("Error getting page of accounts");
+        } finally {
+            getAllAccountsSpan.end();
         }
+
         if (pageOfAccounts != null && !pageOfAccounts.isEmpty()) {
             logger.fine("Returning " + pageOfAccounts.size() + " accounts");
             if (logger.isLoggable(Level.FINE)) {
@@ -245,6 +245,7 @@ public class AccountService {
     @Produces(MediaType.APPLICATION_JSON)
 //	@Counted(name="accounts", description="Number of accounts created in the Stock Trader application")
     @RolesAllowed({"StockTrader"})
+    @WithSpan
     public Account createAccount(@PathParam("owner") String owner) {
         Account account;
         if (owner != null) try {
@@ -307,6 +308,7 @@ public class AccountService {
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({"StockTrader", "StockViewer"})
     @Blocking
+    @WithSpan
     public Account getAccount(@PathParam("id") String id, @QueryParam("total") double total) {
         Optional<Account> accountOptional;
         Account account = null;
@@ -373,6 +375,7 @@ public class AccountService {
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({"StockTrader"})
     @Blocking
+    @WithSpan
     public Account updateAccount(@PathParam("id") String id, @QueryParam("total") double total) {
         logger.fine("Entering updateAccount");
         this.delayUpdate = true;
@@ -432,6 +435,7 @@ public class AccountService {
     @Path("/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({"StockTrader"})
+    @WithSpan
     public Account deleteAccount(@PathParam("id") String id) {
         Optional<Account> accountOptional;
         Account account = null;
@@ -463,6 +467,7 @@ public class AccountService {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({"StockTrader"})
+    @WithSpan
     public Feedback submitFeedback(@PathParam("id") String id, WatsonInput input) {
         String sentiment = "Unknown";
         Feedback feedback = null;

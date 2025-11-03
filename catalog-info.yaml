@@ -31,7 +31,6 @@ spec:
   owner: guests
   providesApis:
   - account-api
-  # Temporarily remove these downstream deps.
   dependsOn:
   - component:default/odm-client-config
   - component:default/watson-client-config

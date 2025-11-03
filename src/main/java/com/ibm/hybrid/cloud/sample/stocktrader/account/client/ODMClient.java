@@ -18,10 +18,13 @@
 package com.ibm.hybrid.cloud.sample.stocktrader.account.client;
 
 import com.ibm.hybrid.cloud.sample.stocktrader.account.json.ODMLoyaltyRule;
+import io.opentelemetry.api.trace.SpanKind;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 
 @Path("/")
@@ -29,7 +32,8 @@ import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 /** mpRestClient "remote" interface for the ODM business rule for determining loyalty level */
 public interface ODMClient {
 	@POST
-    @Consumes("application/json")
-	@Produces("application/json")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @WithSpan(kind = SpanKind.CLIENT, value="ODMClient.getLoyaltyLevel")
     public ODMLoyaltyRule getLoyaltyLevel(/*@HeaderParam("Authorization") String basicAuth,*/ ODMLoyaltyRule input);
 }
